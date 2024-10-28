@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  proxy-db-svc:
+    container_name: proxy-db-svc
+    build:
+      context: ../
+      dockerfile: proxy-database/Dockerfile
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - ENV LANG=C.UTF-8
+    working_dir: /var/www/identity
+    ports:
+      - "3306:3306"
+
+  adminer:
+    image: adminer:latest
+    environment:
+      ADMINER_DEFAULT_SERVER: proxy-db-svc
+    ports:
+      - 8080:8080
+
+  proxy-backend-svc:
+    build:
+      context: ../
+      dockerfile: proxy-backend/Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - proxy-db-svc
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    environment:
+      - MYSQL_HOST=proxy-db-svc
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+      - MYSQL_DATABASE=proxy_website_cms_db
+      - MYSQL_PORT=3306
+      - SMTP_USER=cd629a6c64b3e8
+      - SMTP_PASSWORD=f7549cac0e7627
+      - SMTP_HOST=sandbox.smtp.mailtrap.io
+      - SMTP_PORT=2525
+      - SUPER_ADMIN_EMAIL=superadmin@vultture.com
+      - SUPER_ADMIN_PASS=Qmh@2025
+      - BASE_URL=http://192.168.50.146:3001
+      - SWAGGER_URL=http://localhost:3001/api/v1/user
+    volumes:
+      - ../proxy-backend/uploads/userImages:/app/uploads/userImages
+      - ../proxy-backend:/app
